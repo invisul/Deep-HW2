@@ -79,27 +79,33 @@ class Trainer(abc.ABC):
                 verbose = True
             self._print(f"--- EPOCH {epoch+1}/{num_epochs} ---", verbose)
 
-            # TODO: Train & evaluate for one epoch
+            # Train & evaluate for one epoch
             #  - Use the train/test_epoch methods.
             #  - Save losses and accuracies in the lists above.
-            # ====== YOUR CODE: ======
-            raise NotImplementedError()
-            # ========================
+            train_result = self.train_epoch(dl_train, **kw)
+            train_loss += train_result.losses
+            train_acc.append(train_result.accuracy)
 
-            # TODO:
+            test_result = self.test_epoch(dl_test, **kw)
+            test_loss += test_result.losses
+            test_acc.append(test_result.accuracy)
+
+            #
             #  - Optional: Implement early stopping. This is a very useful and
             #    simple regularization technique that is highly recommended.
             #  - Optional: Implement checkpoints. You can use the save_checkpoint
             #    method on this class to save the model to the file specified by
             #    the checkpoints argument.
+
             if best_acc is None or test_result.accuracy > best_acc:
-                # ====== YOUR CODE: ======
-                raise NotImplementedError()
-                # ========================
+                best_acc = test_result.accuracy
+                epochs_without_improvement = 0
+                if checkpoints is not None:
+                    self.save_checkpoint(checkpoints+'.pt')
             else:
-                # ====== YOUR CODE: ======
-                raise NotImplementedError()
-                # ========================
+                epochs_without_improvement += 1
+                if (early_stopping is not None) and epochs_without_improvement == early_stopping:
+                    break
 
         return FitResult(actual_num_epochs, train_loss, train_acc, test_loss, test_acc)
 
@@ -285,31 +291,46 @@ class ClassifierTrainer(Trainer):
 
 class LayerTrainer(Trainer):
     def __init__(self, model, loss_fn, optimizer):
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
+        super().__init__(model)
+        self.loss_fn = loss_fn
+        self.optimizer = optimizer
 
     def train_batch(self, batch) -> BatchResult:
         X, y = batch
 
-        # TODO: Train the Layer model on one batch of data.
+        # Train the Layer model on one batch of data.
         #  - Forward pass
         #  - Backward pass
         #  - Optimize params
         #  - Calculate number of correct predictions (make sure it's an int,
         #    not a tensor) as num_correct.
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
+
+        # 1) forward pass
+        model_out = self.model.forward(X.view(X.shape[0], -1))
+        loss = self.loss_fn(model_out, y)
+
+        # 2) backward pass
+        loss_grads = self.loss_fn.backward()
+        self.model.backward(loss_grads)
+
+        # 3) optimize params
+        self.optimizer.step()
+
+        # 4) calculate the number of correct classifications
+        y_pred = torch.argmax(model_out, dim=1)
+        num_correct = int(torch.sum(y == y_pred))
 
         return BatchResult(loss, num_correct)
 
     def test_batch(self, batch) -> BatchResult:
         X, y = batch
 
-        # TODO: Evaluate the Layer model on one batch of data.
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
+        # 1) Evaluate the Layer model on one batch of data.
+        model_out = self.model.forward(X.view(X.shape[0], -1))
+        loss = self.loss_fn.forward(model_out, y)
+
+        # 2) calculate the number of correct classifications
+        y_pred = torch.argmax(model_out, dim=1)
+        num_correct = int(torch.sum(y == y_pred))
 
         return BatchResult(loss, num_correct)

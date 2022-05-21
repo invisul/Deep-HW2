@@ -68,12 +68,10 @@ class VanillaSGD(Optimizer):
             if dp is None:
                 continue
 
-            # TODO: Implement the optimizer step.
+            # Implement the optimizer step.
             #  Update the gradient according to regularization and then
             #  update the parameters tensor.
-            # ====== YOUR CODE: ======
-            raise NotImplementedError()
-            # ========================
+            p -= self.learn_rate * (dp + self.reg * p)
 
 
 class MomentumSGD(Optimizer):
@@ -89,23 +87,30 @@ class MomentumSGD(Optimizer):
         self.reg = reg
         self.momentum = momentum
 
-        # TODO: Add your own initializations as needed.
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
+        # Add your own initializations as needed.
+        self.v_t = [torch.zeros_like(p) for p, _ in self.params if type(p) == Tensor]
+        self.idx = 0
 
     def step(self):
+
         for p, dp in self.params:
             if dp is None:
                 continue
 
-            # TODO: Implement the optimizer step.
+            # Implement the optimizer step.
             # update the parameters tensor based on the velocity. Don't forget
             # to include the regularization term.
-            # ====== YOUR CODE: ======
-            raise NotImplementedError()
-            # ========================
+            # if self.idx == 0:
+            #     print(p)
+            self.v_t[self.idx] = (self.momentum * self.v_t[self.idx]) - (self.learn_rate * (dp + self.reg * p))
+            p += self.v_t[self.idx]
+            # if self.idx == 0:
+            #     print(p)
+            self.idx += 1
+            if self.idx == len(self.params):
+                self.idx=0
 
+            # p -= self.learn_rate * (dp + self.reg * p)
 
 class RMSProp(Optimizer):
     def __init__(self, params, learn_rate=1e-3, reg=0, decay=0.99, eps=1e-8):

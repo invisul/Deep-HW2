@@ -9,29 +9,20 @@ math (delimited with $$).
 # Part 1 (Backprop) answers
 
 part1_q1 = r"""
-**Your answer:**
-
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
-
+1A. The Jacobian is a $64x1024x64x512$ tensor. This is because we derive each element of the output matrix ($64x512$)
+ by each element of the input matrix ($64x1024$).  
+1B. This Jacobian is indeed sparse. This is because the linear model multiplies each input row by the weights, which
+ produces the output row for that sample. E.g. The derivatives of each element in the output matrix that do not belong to
+ the corresponding row in the input matrix are zero. Since the vast majority of these elements do not belong to the
+ corresponding row, the vast majority of the elements in this tensor are zero, which makes the tensor sparse.  
+1C. TODO: We **DO NOT** need to materialize the entire Jacobian since it is sparse.  
+2A. 
 """
 
 part1_q2 = r"""
-**Your answer:**
-
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
-
+Back-propagation is **NOT REQUIRED** in order to train a neural network, since all of the partial derivatives can be
+ calculated. However, this is a very inefficient process which consumes much more time and memory, so backpropagation
+ is preffered.
 """
 
 
@@ -40,28 +31,22 @@ An equation: $e^{i\pi} -1 = 0$
 
 
 def part2_overfit_hp():
-    wstd, lr, reg = 0, 0, 0
-    # TODO: Tweak the hyperparameters until you overfit the small dataset.
-    # ====== YOUR CODE: ======
-    raise NotImplementedError()
-    # ========================
+    wstd, lr, reg = 2e-5, 2e-2, 2e-1
+    # Tweak the hyperparameters until you overfit the small dataset.
     return dict(wstd=wstd, lr=lr, reg=reg)
 
 
 def part2_optim_hp():
     wstd, lr_vanilla, lr_momentum, lr_rmsprop, reg, = (
-        0,
-        0,
-        0,
-        0,
-        0,
+        1e-4,
+        3e-4,
+        4e-34,
+        5e-4,
+        1e-4,
     )
 
-    # TODO: Tweak the hyperparameters to get the best results you can.
+    # Tweak the hyperparameters to get the best results you can.
     # You may want to use different learning rates for each optimizer.
-    # ====== YOUR CODE: ======
-    raise NotImplementedError()
-    # ========================
     return dict(
         wstd=wstd,
         lr_vanilla=lr_vanilla,
