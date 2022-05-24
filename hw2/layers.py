@@ -322,21 +322,23 @@ class Dropout(Layer):
         self.p = p
 
     def forward(self, x, **kw):
-        # TODO: Implement the dropout forward pass.
+        # Implement the dropout forward pass.
         #  Notice that contrary to previous layers, this layer behaves
-        #  differently a according to the current training_mode (train/test).
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
-
+        #  differently according to the current training_mode (train/test).
+        if self.training_mode:
+            # draw samples from the bernoulli distribution
+            self.grad_cache['activation'] = torch.bernoulli((1 - self.p) * torch.ones(x.shape))
+            out = self.grad_cache['activation'] * x
+        else:
+            out = (1 - self.p) * x
         return out
 
     def backward(self, dout):
-        # TODO: Implement the dropout backward pass.
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
-
+        # Implement the dropout backward pass.
+        if self.training_mode:
+            dx = self.grad_cache['activation'] * dout
+        else:
+            dx = (1 - self.p) * dout
         return dx
 
     def params(self):
@@ -452,6 +454,8 @@ class MLP(Layer):
             layers += [Linear(num_params[idx], num_params[idx+1])]
             if idx != len(num_params)-2:
                 layers += [__get_activation(activation)]
+                if dropout > 0:
+                    layers += [Dropout(dropout)]
 
         self.sequence = Sequential(*layers)
 

@@ -20,10 +20,8 @@ class Classifier(nn.Module, ABC):
         super().__init__()
         self.model = model
 
-        # TODO: Add any additional initializations here, if you need them.
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
+        # Add any additional initializations here, if you need them.
+        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x: Tensor) -> Tensor:
         """
@@ -32,10 +30,8 @@ class Classifier(nn.Module, ABC):
         """
         z: Tensor = None
 
-        # TODO: Implement the forward pass, returning raw scores from the wrapped model.
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
+        # Implement the forward pass, returning raw scores from the wrapped model.
+        z = self.model.forward(x)
         assert z.shape[0] == x.shape[0] and z.ndim == 2, "raw scores should be (N, C)"
         return z
 
@@ -45,10 +41,8 @@ class Classifier(nn.Module, ABC):
         :returns: (N, C) i.e. C probability values between 0 and 1 for each of N
             samples.
         """
-        # TODO: Calcualtes class scores for each sample.
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
+        # Calcualtes class scores for each sample.
+        z = self.forward(x)
         return self.predict_proba_scores(z)
 
     def predict_proba_scores(self, z: Tensor) -> Tensor:
@@ -57,10 +51,8 @@ class Classifier(nn.Module, ABC):
         :returns: (N, C) i.e. C probability values between 0 and 1 for each of N
             samples.
         """
-        # TODO: Calculate class probabilities for the input.
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
+        # Calculate class probabilities for the input.
+        return self.softmax.forward(z)
 
     def classify(self, x: Tensor) -> Tensor:
         """
@@ -123,13 +115,10 @@ class BinaryClassifier(Classifier):
         self.positive_class = positive_class
 
     def _classify(self, y_proba: Tensor):
-        # TODO:
         #  Classify each sample class 1 if the probability of the positive class is
         #  greater or equal to the threshold.
         #  Output should be a (N,) integer tensor.
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
+        return (y_proba[:, self.positive_class] >= self.threshold).int()
 
 
 def plot_decision_boundary_2d(

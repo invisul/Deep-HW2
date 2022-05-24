@@ -40,8 +40,8 @@ def part2_optim_hp():
     wstd, lr_vanilla, lr_momentum, lr_rmsprop, reg, = (
         1e-4,
         3e-4,
-        4e-34,
-        5e-4,
+        3e-6,
+        5e-5,
         1e-4,
     )
 
@@ -58,14 +58,11 @@ def part2_optim_hp():
 
 def part2_dropout_hp():
     wstd, lr, = (
-        0,
-        0,
+        1e-4,
+        1e-5,
     )
-    # TODO: Tweak the hyperparameters to get the model to overfit without
+    # Tweak the hyperparameters to get the model to overfit without
     # dropout.
-    # ====== YOUR CODE: ======
-    raise NotImplementedError()
-    # ========================
     return dict(wstd=wstd, lr=lr)
 
 
@@ -117,14 +114,11 @@ An equation: $e^{i\pi} -1 = 0$
 
 
 def part3_arch_hp():
-    n_layers = 0  # number of layers (not including output)
-    hidden_dims = 0  # number of output dimensions for each hidden layer
-    activation = "none"  # activation function to apply after each hidden layer
-    out_activation = "none"  # activation function to apply at the output layer
-    # TODO: Tweak the MLP architecture hyperparameters.
-    # ====== YOUR CODE: ======
-    raise NotImplementedError()
-    # ========================
+    # Tweak the MLP architecture hyperparameters.
+    n_layers = 3  # number of layers (not including output)
+    hidden_dims = 6  # number of output dimensions for each hidden layer
+    activation = "lrelu"  # activation function to apply after each hidden layer
+    out_activation = "softmax"  # activation function to apply at the output layer
     return dict(
         n_layers=n_layers,
         hidden_dims=hidden_dims,
@@ -134,19 +128,17 @@ def part3_arch_hp():
 
 
 def part3_optim_hp():
-    import torch.nn
-    import torch.nn.functional
-
-    loss_fn = None  # One of the torch.nn losses
-    lr, weight_decay, momentum = 0, 0, 0  # Arguments for SGD optimizer
-    # TODO:
     #  - Tweak the Optimizer hyperparameters.
     #  - Choose the appropriate loss function for your architecture.
     #    What you returns needs to be a callable, so either an instance of one of the
     #    Loss classes in torch.nn or one of the loss functions from torch.nn.functional.
-    # ====== YOUR CODE: ======
-    raise NotImplementedError()
-    # ========================
+
+    import torch.nn
+    import torch.nn.functional
+
+    loss_fn = torch.nn.BCELoss()  # One of the torch.nn losses
+    lr, weight_decay, momentum = 1e-3, 1e-3, 1e-3  # Arguments for SGD optimizer
+
     return dict(lr=lr, weight_decay=weight_decay, momentum=momentum, loss_fn=loss_fn)
 
 
