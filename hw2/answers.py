@@ -115,10 +115,10 @@ An equation: $e^{i\pi} -1 = 0$
 
 def part3_arch_hp():
     # Tweak the MLP architecture hyperparameters.
-    n_layers = 3  # number of layers (not including output)
-    hidden_dims = 6  # number of output dimensions for each hidden layer
-    activation = "lrelu"  # activation function to apply after each hidden layer
-    out_activation = "softmax"  # activation function to apply at the output layer
+    n_layers = 4  # number of layers (not including output)
+    hidden_dims = 60  # number of output dimensions for each hidden layer
+    activation = "relu"  # activation function to apply after each hidden layer
+    out_activation = "relu"  # activation function to apply at the output layer
     return dict(
         n_layers=n_layers,
         hidden_dims=hidden_dims,
@@ -136,8 +136,10 @@ def part3_optim_hp():
     import torch.nn
     import torch.nn.functional
 
-    loss_fn = torch.nn.BCELoss()  # One of the torch.nn losses
-    lr, weight_decay, momentum = 1e-3, 1e-3, 1e-3  # Arguments for SGD optimizer
+    loss_fn = torch.nn.CrossEntropyLoss()  # One of the torch.nn losses
+    lr, weight_decay, momentum = 7e-6, 1e-6, 0.9  # Arguments for SGD optimizer
+    # lr, weight_decay, momentum = 7e-8, 1e-8, 0.0  # Arguments for SGD optimizer
+
 
     return dict(lr=lr, weight_decay=weight_decay, momentum=momentum, loss_fn=loss_fn)
 

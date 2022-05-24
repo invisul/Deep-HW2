@@ -264,13 +264,14 @@ class ClassifierTrainer(Trainer):
         #  - Classify and calculate number of correct predictions
 
         # 1) forward pass
-        y_pred = self.model.forward(X.view(X.shape[0], -1))
-        batch_loss = self.loss_fn(y_pred, y.int())
-
+        y_pred = self.model.predict_proba(X.view(X.shape[0], -1))
+        # y_pred = self.model.forward(X.view(X.shape[0], -1))
+        loss = self.loss_fn(y_pred, y)
+        batch_loss = float(loss)
         # 2) backward pass
-        self.optimizer.zero_grad()
-        self.loss_fn.backward()
-        # loss_grads = self.loss_fn.backward()
+        # self.optimizer.zero_grad()
+        loss.backward()
+        # self.loss_fn.backward()
         # self.model.backward(loss_grads)
 
         # 3) optimize params
@@ -278,7 +279,7 @@ class ClassifierTrainer(Trainer):
 
         # 4) calculate the number of correct classifications
         # y_pred = torch.argmax(model_out, dim=1)
-        num_correct = int(torch.sum(y == y_pred))
+        num_correct = int(torch.sum(y == self.model.classify_scores(y_pred)))
 
         return BatchResult(batch_loss, num_correct)
 
@@ -298,12 +299,13 @@ class ClassifierTrainer(Trainer):
             #  - Calculate number of correct predictions
 
             # 1) Evaluate the Layer model on one batch of data.
-            y_pred = self.model.forward(X.view(X.shape[0], -1))
-            batch_loss = self.loss_fn(y_pred, y)
-
+            # y_pred = self.model.forward(X.view(X.shape[0], -1))
+            y_pred = self.model.predict_proba(X.view(X.shape[0], -1))
+            loss = self.loss_fn(y_pred, y)
+            batch_loss = float(loss)
             # 2) calculate the number of correct classifications
             # y_pred = torch.argmax(model_out, dim=1)
-            num_correct = int(torch.sum(y == y_pred))
+            num_correct = int(torch.sum(y == self.model.classify_scores(y_pred)))
 
         return BatchResult(batch_loss, num_correct)
 

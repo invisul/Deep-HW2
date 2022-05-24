@@ -158,16 +158,30 @@ def plot_decision_boundary_2d(
         cmap=cmap,
     )
 
-    # TODO:
     #  Construct the decision boundary.
     #  Use torch.meshgrid() to create the grid (x1_grid, x2_grid) with step dx on which
     #  you evaluate the classifier.
     #  The classifier predictions (y_hat) will be treated as values for which we'll
     #  plot a contour map.
-    x1_grid, x2_grid, y_hat = None, None, None
-    # ====== YOUR CODE: ======
-    raise NotImplementedError()
-    # ========================
+
+    # 1) calculate the range for x1
+    x1_min = x[:, 0].min()
+    x1_max = x[:, 0].max()
+    x1 = torch.linspace(x1_min, x1_max, int((x1_max-x1_min)/dx)+1)
+
+    # 2) calculate the reange for x2
+    x2_min = x[:, 1].min()
+    x2_max = x[:, 1].max()
+    x2 = torch.linspace(x2_min, x2_max, int((x2_max-x2_min)/dx)+1)
+
+    # 3) calculate the grid
+    x1_grid, x2_grid = torch.meshgrid(x1, x2, indexing='ij')
+
+    # 4) create a "data" tensor from the grid
+    grid_data_points = torch.vstack([x1_grid.flatten(), x2_grid.flatten()]).T
+
+    # 5) classify the new data using the trained classifier
+    y_hat = classifier.classify(grid_data_points).reshape(x1_grid.shape)
 
     # Plot the decision boundary as a filled contour
     ax.contourf(x1_grid.numpy(), x2_grid.numpy(), y_hat.numpy(), alpha=0.3, cmap=cmap)
@@ -192,16 +206,21 @@ def select_roc_thresh(
         created.
     """
 
-    # TODO:
     #  Calculate the optimal classification threshold using ROC analysis.
     #  You can use sklearn's roc_curve() which returns the (fpr, tpr, thresh) values.
     #  Calculate the index of the optimal threshold as optimal_thresh_idx.
     #  Calculate the optimal threshold as optimal_thresh.
-    fpr, tpr, thresh = None, None, None
-    optimal_theresh_idx, optimal_thresh = None, None
-    # ====== YOUR CODE: ======
-    raise NotImplementedError()
-    # ========================
+
+    # run the samples through the classifier, without classifying the examples, we want only the scores (softmax output)
+    y_scores = classifier.predict_proba(x)[:, 1]
+
+    # use the calculated probabilities in the function `roc_curve` to check the rates for multiple thresholds
+    fpr, tpr, thresh = roc_curve(y, y_scores.detach().numpy())
+    # choose the threshold that gives us the false positives closest to 0 and the true positives rate closest to 1
+    coords_on_roc_curve = torch.abs(torch.vstack([torch.from_numpy(fpr), torch.from_numpy(tpr)])).T
+    diff = coords_on_roc_curve - torch.Tensor([0., 1.])
+    optimal_thresh_idx = torch.argmin(diff)
+    optimal_thresh = thresh[optimal_thresh_idx]
 
     if plot:
         fig, ax = plt.subplots(1, 1, figsize=(6, 4))
