@@ -117,8 +117,8 @@ def part3_arch_hp():
     # Tweak the MLP architecture hyperparameters.
     n_layers = 4  # number of layers (not including output)
     hidden_dims = 60  # number of output dimensions for each hidden layer
-    activation = "relu"  # activation function to apply after each hidden layer
-    out_activation = "relu"  # activation function to apply at the output layer
+    activation = "lrelu"  # activation function to apply after each hidden layer
+    out_activation = "tanh"  # activation function to apply at the output layer
     return dict(
         n_layers=n_layers,
         hidden_dims=hidden_dims,

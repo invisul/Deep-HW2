@@ -218,7 +218,8 @@ def select_roc_thresh(
     fpr, tpr, thresh = roc_curve(y, y_scores.detach().numpy())
     # choose the threshold that gives us the false positives closest to 0 and the true positives rate closest to 1
     coords_on_roc_curve = torch.abs(torch.vstack([torch.from_numpy(fpr), torch.from_numpy(tpr)])).T
-    diff = coords_on_roc_curve - torch.Tensor([0., 1.])
+    diff = torch.linalg.norm(coords_on_roc_curve - torch.Tensor([0., 1.]), dim=1)
+    # diff = torch.sqrt(torch.from_numpy(fpr ** 2) + ((1 - tpr) ** 2))
     optimal_thresh_idx = torch.argmin(diff)
     optimal_thresh = thresh[optimal_thresh_idx]
 
