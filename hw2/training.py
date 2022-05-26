@@ -269,10 +269,7 @@ class ClassifierTrainer(Trainer):
         loss = self.loss_fn(y_pred, y)
         batch_loss = float(loss)
         # 2) backward pass
-        # self.optimizer.zero_grad()
         loss.backward()
-        # self.loss_fn.backward()
-        # self.model.backward(loss_grads)
 
         # 3) optimize params
         self.optimizer.step()
