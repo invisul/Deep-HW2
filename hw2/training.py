@@ -70,6 +70,7 @@ class Trainer(abc.ABC):
 
         train_loss, train_acc, test_loss, test_acc = [], [], [], []
         best_acc = None
+        best_loss = None
 
         for epoch in range(num_epochs):
             verbose = False  # pass this to train/test_epoch.
@@ -97,15 +98,21 @@ class Trainer(abc.ABC):
             #    method on this class to save the model to the file specified by
             #    the checkpoints argument.
 
-            if best_acc is None or test_result.accuracy > best_acc:
-                best_acc = test_result.accuracy
+            current_loss = sum(test_result.losses) / len(test_result.losses)
+
+            if best_loss is None or current_loss < best_loss:
+                best_loss = current_loss
                 epochs_without_improvement = 0
-                if checkpoints is not None:
-                    self.save_checkpoint(checkpoints+'.pt')
             else:
                 epochs_without_improvement += 1
                 if (early_stopping is not None) and epochs_without_improvement == early_stopping:
+                    print("Break")
                     break
+
+            if best_acc is None or test_result.accuracy > best_acc:
+                best_acc = test_result.accuracy
+                if checkpoints is not None:
+                    self.save_checkpoint(checkpoints+'.pt')
 
         return FitResult(actual_num_epochs, train_loss, train_acc, test_loss, test_acc)
 
@@ -276,7 +283,7 @@ class ClassifierTrainer(Trainer):
 
         # 4) calculate the number of correct classifications
         # y_pred = torch.argmax(model_out, dim=1)
-        num_correct = int(torch.sum(y == self.model.classify_scores(y_pred)))
+        num_correct = int(torch.sum(y == self.model._classify(y_pred)))
 
         return BatchResult(batch_loss, num_correct)
 
@@ -302,7 +309,7 @@ class ClassifierTrainer(Trainer):
             batch_loss = float(loss)
             # 2) calculate the number of correct classifications
             # y_pred = torch.argmax(model_out, dim=1)
-            num_correct = int(torch.sum(y == self.model.classify_scores(y_pred)))
+            num_correct = int(torch.sum(y == self.model._classify(y_pred)))
 
         return BatchResult(batch_loss, num_correct)
 

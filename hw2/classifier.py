@@ -215,10 +215,10 @@ def select_roc_thresh(
     y_scores = classifier.predict_proba(x)[:, 1]
 
     # use the calculated probabilities in the function `roc_curve` to check the rates for multiple thresholds
-    fpr, tpr, thresh = roc_curve(y, y_scores.detach().numpy())
+    fpr, tpr, thresh = roc_curve(y.detach().numpy(), y_scores.detach().numpy())
     # choose the threshold that gives us the false positives closest to 0 and the true positives rate closest to 1
-    coords_on_roc_curve = torch.abs(torch.vstack([torch.from_numpy(fpr), torch.from_numpy(tpr)])).T
-    diff = coords_on_roc_curve - torch.Tensor([0., 1.])
+    coords_on_roc_curve = torch.vstack([torch.from_numpy(fpr), torch.from_numpy(tpr)]).T
+    diff = torch.linalg.norm(coords_on_roc_curve - torch.Tensor([0., 1.]), dim=1)
     optimal_thresh_idx = torch.argmin(diff)
     optimal_thresh = thresh[optimal_thresh_idx]
 

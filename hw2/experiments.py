@@ -52,36 +52,29 @@ def mlp_experiment(
     # 1) create the Classifier (MLP) model
     model = BinaryClassifier(model=MLP(in_dim=in_dim,
                                        dims=[width]*depth+[2],
-                                       nonlins=['lrelu']*depth+['lrelu']),
+                                       nonlins=['lrelu']*depth+['tanh']),
                              threshold=0.5)
 
     # 2) define loss function
     loss_fn = torch.nn.CrossEntropyLoss()
 
     # 3) create optimizer instance
-    # optimizer = torch.optim.SGD(params=model.parameters(), lr=1, weight_decay=1, momentum=0.9)
-    # optimizer = torch.optim.SGD(params=model.parameters(), lr=1)
-    # optimizer = torch.optim.Adam(params=model.parameters(), lr=1)
-    optimizer = torch.optim.RMSprop(params=model.parameters(), lr=1, weight_decay=1, momentum=0.9)
+    optimizer = torch.optim.RMSprop(params=model.parameters(), lr=5e-5, weight_decay=5e-3, momentum=0.88)
 
     # 4) create trainer instance
     trainer = ClassifierTrainer(model, loss_fn, optimizer)
 
     # 5) train the model
-    fit_result = trainer.fit(dl_train, dl_valid, num_epochs=n_epochs, print_every=0, verbose=False)
+    fit_result = trainer.fit(dl_train, dl_valid, num_epochs=n_epochs, print_every=0, verbose=False, early_stopping=1)
 
     # 6) get the accuracy on the validation set (from the last epoch)
     valid_acc = fit_result.test_acc[-1]
-    if valid_acc <= 50:
-        print(fit_result.train_acc)
-        print(fit_result.test_acc)
 
     # 7) select optimal threshold
     thresh = select_roc_thresh(model, *dl_valid.dataset.tensors, plot=False)
 
     # 8) set the optimal threshold
-    # print(thresh)
-    # model.threshold = thresh
+    model.threshold = thresh
 
     # 9) get the accuracy on the test set (from a single epoch)
     test_result = trainer.test_epoch(dl_test)
