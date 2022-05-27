@@ -71,7 +71,8 @@ class CNN(nn.Module):
         in_channels, in_h, in_w, = tuple(self.in_size)
 
         layers = []
-        # TODO: Create the feature extractor part of the model:
+
+        # Create the feature extractor part of the model:
         #  [(CONV -> ACT)*P -> POOL]*(N/P)
         #  Apply activation function after each conv, using the activation type and
         #  parameters.
@@ -79,11 +80,13 @@ class CNN(nn.Module):
         #  pooling type and pooling parameters.
         #  Note: If N is not divisible by P, then N mod P additional
         #  CONV->ACTs should exist at the end, without a POOL after them.
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        for ii in range(len(self.channels)):
+            layers += [nn.Conv2d(in_channels, *self.conv_params)]
+            layers += [nn.ReLU]
 
-        # ========================
+
         seq = nn.Sequential(*layers)
+
         return seq
 
     def _n_features(self) -> int:
