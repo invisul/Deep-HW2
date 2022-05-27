@@ -200,7 +200,7 @@ class ResidualBlock(nn.Module):
 
         self.main_path, self.shortcut_path = None, None
 
-        # TODO: Implement a generic residual block.
+        # Implement a generic residual block.
         #  Use the given arguments to create two nn.Sequentials:
         #  - main_path, which should contain the convolution, dropout,
         #    batchnorm, relu sequences (in this order).
@@ -213,16 +213,55 @@ class ResidualBlock(nn.Module):
         #  - For simplicity of implementation, assume kernel sizes are odd.
         #  - Don't create layers which you don't use! This will prevent
         #    correct comparison in the test.
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
+
+        # 1) build main path
+        main_path = []
+        for ii in range(len(channels)):
+            # 1.0) calculate padding
+            padding = int((kernel_sizes[ii] - 1) / 2)
+
+            # 1.1) add convolutional layer to main path
+            if ii == 0:
+                main_path += [nn.Conv2d(in_channels=in_channels,
+                                        out_channels=channels[ii],
+                                        kernel_size=kernel_sizes[ii], bias=True, padding=padding)]
+            else:
+                main_path += [nn.Conv2d(in_channels=channels[ii-1],
+                                        out_channels=channels[ii],
+                                        kernel_size=kernel_sizes[ii], bias=True, padding=padding)]
+
+            if ii != (len(channels) - 1):
+                # 1.2) add dropout layer to the main path
+                if dropout > 0:
+                    main_path += [nn.Dropout2d(dropout)]
+
+                # 1.3) add batchnorm layer to the main path
+                if batchnorm:
+                    main_path += [nn.BatchNorm2d(channels[ii])]
+
+                # 1.4) add the activation layer to the main path
+                main_path += [ACTIVATIONS[activation_type](**activation_params)]
+
+        # 1.5) add all main path layers as a sequential model
+        self.main_path = nn.Sequential(*main_path)
+
+        # 2) build shortcut path
+        shortcut_path = []
+
+        # 2.1) if the number of output channels of the main path is equal to the number of input channels
+        if in_channels == channels[-1]:
+            shortcut_path += [nn.Identity()]
+        else:
+            # 2.2) add a non-biased convolutional layer to equalize the number of channels
+            shortcut_path += [nn.Conv2d(in_channels, channels[-1], kernel_size=1, bias=False, padding=0)]
+
+        # 2.3) add shortcut path layer as a sequential model
+        self.shortcut_path = nn.Sequential(*shortcut_path)
 
     def forward(self, x: Tensor):
-        # TODO: Implement the forward pass. Save the main and residual path to `out`.
-        out: Tensor = None
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
+        # Implement the forward pass. Save the main and residual path to `out`.
+        # out: Tensor = None
+        out = self.main_path(x) + self.shortcut_path(x)
         out = torch.relu(out)
         return out
 
@@ -257,12 +296,12 @@ class ResidualBottleneckBlock(ResidualBlock):
         assert len(inner_channels) > 0
         assert len(inner_channels) == len(inner_kernel_sizes)
 
-        # TODO:
         #  Initialize the base class in the right way to produce the bottleneck block
         #  architecture.
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
+        super().__init__(in_channels=in_out_channels,
+                         channels=[inner_channels[0], *inner_channels, in_out_channels],
+                         kernel_sizes=[1, *inner_kernel_sizes, 1],
+                         **kwargs)
 
 
 class ResNet(CNN):
@@ -306,9 +345,12 @@ class ResNet(CNN):
         #  - Use your own ResidualBlock implementation.
         #  - Use bottleneck blocks if requested and if the number of input and output
         #    channels match for each group of P convolutions.
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
+
+        N = len(self.channels)
+        P = self.pool_every
+        num_of_blocks = int(torch.floor(torch.tensor(N / P)))
+
+
         seq = nn.Sequential(*layers)
         return seq
 
