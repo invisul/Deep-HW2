@@ -271,7 +271,10 @@ class ClassifierTrainer(Trainer):
         #  - Classify and calculate number of correct predictions
 
         # 1) forward pass
-        y_pred = self.model.predict_proba(X.view(X.shape[0], -1))
+        self.optimizer.zero_grad()
+        y_pred = self.model.predict_proba(X)
+
+        # y_pred = self.model.predict_proba(X.view(X.shape[0], -1))
         # y_pred = self.model.forward(X.view(X.shape[0], -1))
         loss = self.loss_fn(y_pred, y)
         batch_loss = float(loss)
@@ -304,7 +307,8 @@ class ClassifierTrainer(Trainer):
 
             # 1) Evaluate the Layer model on one batch of data.
             # y_pred = self.model.forward(X.view(X.shape[0], -1))
-            y_pred = self.model.predict_proba(X.view(X.shape[0], -1))
+            # y_pred = self.model.predict_proba(X.view(X.shape[0], -1))
+            y_pred = self.model.predict_proba(X)
             loss = self.loss_fn(y_pred, y)
             batch_loss = float(loss)
             # 2) calculate the number of correct classifications

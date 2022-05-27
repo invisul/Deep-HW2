@@ -80,10 +80,19 @@ class CNN(nn.Module):
         #  pooling type and pooling parameters.
         #  Note: If N is not divisible by P, then N mod P additional
         #  CONV->ACTs should exist at the end, without a POOL after them.
-        for ii in range(len(self.channels)):
-            layers += [nn.Conv2d(in_channels, *self.conv_params)]
-            layers += [nn.ReLU]
 
+        p_idx = 0
+        for ii in range(len(self.channels)):
+            if ii == 0:
+                layers += [nn.Conv2d(in_channels=in_channels, out_channels=self.channels[ii], **self.conv_params)]
+            else:
+                layers += [nn.Conv2d(in_channels=self.channels[ii-1], out_channels=self.channels[ii],
+                                     **self.conv_params)]
+            layers += [ACTIVATIONS[self.activation_type](**self.activation_params)]
+            p_idx += 1
+            if p_idx == self.pool_every:
+                layers += [POOLINGS[self.pooling_type](**self.pooling_params)]
+                p_idx = 0
 
         seq = nn.Sequential(*layers)
 
@@ -94,36 +103,59 @@ class CNN(nn.Module):
         Calculates the number of extracted features going into the the classifier part.
         :return: Number of features.
         """
-        # Make sure to not mess up the random state.
+        # 0) Make sure to not mess up the random state.
         rng_state = torch.get_rng_state()
         try:
-            # ====== YOUR CODE: ======
-            raise NotImplementedError()
-            # ========================
+            # 1) generate a random input with the same size as defined in __init__
+            dummy_input = torch.randn([1, *self.in_size])
+
+            # 2) pass the generated input through the feature extractor
+            extractor_output = self.feature_extractor(dummy_input)
+
+            # 3) The number of features the extractor calculates is a product of all the dimensions of the output size
+            return int(torch.prod(torch.tensor(extractor_output.shape[1:])))
         finally:
             torch.set_rng_state(rng_state)
 
     def _make_mlp(self):
-        # TODO:
         #  - Create the MLP part of the model: (FC -> ACT)*M -> Linear
         #  - Use the the MLP implementation from Part 1.
         #  - The first Linear layer should have an input dim of equal to the number of
         #    convolutional features extracted by the convolutional layers.
         #  - The last Linear layer should have an output dim of out_classes.
-        mlp: MLP = None
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
+
+        # 1) get the depth of the MLP (not including the output layer
+        d = len(self.hidden_dims)
+
+        # 2) specify the width of each layer, including the output layer
+        dims = [*self.hidden_dims, self.out_classes]
+
+        # 3) initialize the activation for each linear layer. The activation for the output layer should be Identity
+        activations = []
+        for ii in range(d):
+            activations += [ACTIVATIONS[self.activation_type](**self.activation_params)]
+        activations += [ACTIVATIONS['none']()]
+
+        # 4) initialize the MLP model
+        mlp: MLP = MLP(in_dim=self._n_features(), dims=dims, nonlins=activations)
+
         return mlp
 
     def forward(self, x: Tensor):
-        # TODO: Implement the forward pass.
+        # Implement the forward pass.
         #  Extract features from the input, run the classifier on them and
         #  return class scores.
         out: Tensor = None
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
+
+        # 1) extract the features from the image
+        features = self.feature_extractor(x)
+
+        # 2) flatten the features, so we would have (num_of_pixels_in_last_layer x depth x K x K)
+        features = features.view(features.size(0), -1)
+
+        # 3) use the classifier to predict the score for each class
+        out = self.mlp(features)
+
         return out
 
 
@@ -281,23 +313,23 @@ class ResNet(CNN):
         return seq
 
 
-class YourCNN(CNN):
-    def __init__(self, *args, **kwargs):
-        """
-        See CNN.__init__
-        """
-        super().__init__(*args, **kwargs)
-
-        # TODO: Add any additional initialization as needed.
-        # ====== YOUR CODE: ======
-        raise NotImplementedError()
-        # ========================
-
-    # TODO: Change whatever you want about the CNN to try to
-    #  improve it's results on CIFAR-10.
-    #  For example, add batchnorm, dropout, skip connections, change conv
-    #  filter sizes etc.
-    # ====== YOUR CODE: ======
-    raise NotImplementedError()
-
-    # ========================
+# class YourCNN(CNN):
+#     def __init__(self, *args, **kwargs):
+#         """
+#         See CNN.__init__
+#         """
+#         super().__init__(*args, **kwargs)
+#
+#         # TODO: Add any additional initialization as needed.
+#         # ====== YOUR CODE: ======
+#         raise NotImplementedError()
+#         # ========================
+#
+#     # TODO: Change whatever you want about the CNN to try to
+#     #  improve it's results on CIFAR-10.
+#     #  For example, add batchnorm, dropout, skip connections, change conv
+#     #  filter sizes etc.
+#     # ====== YOUR CODE: ======
+#     raise NotImplementedError()
+#
+#     # ========================
