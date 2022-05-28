@@ -12,7 +12,6 @@ POOLINGS = {"avg": nn.AvgPool2d, "max": nn.MaxPool2d}
 class CNN(nn.Module):
     """
     A simple convolutional neural network model based on PyTorch nn.Modules.
-
     Has a convolutional part at the beginning and an MLP at the end.
     The architecture is:
     [(CONV -> ACT)*P -> POOL]*(N/P) -> (FC -> ACT)*M -> FC
@@ -294,8 +293,8 @@ class ResidualBottleneckBlock(ResidualBlock):
         :param kwargs: Any additional arguments supported by ResidualBlock.
         """
         assert len(inner_channels) > 0
+        # assert len(inner_channels) == len(inner_kernel_sizes)
         assert len(inner_channels) == len(inner_kernel_sizes)
-
         #  Initialize the base class in the right way to produce the bottleneck block
         #  architecture.
         super().__init__(in_channels=in_out_channels,
@@ -348,8 +347,58 @@ class ResNet(CNN):
 
         N = len(self.channels)
         P = self.pool_every
-        num_of_blocks = int(torch.floor(torch.tensor(N / P)))
 
+        # num_of_blocks = N//P
+        activations = ACTIVATIONS[self.activation_type]
+        pool = POOLINGS[self.pooling_type]
+
+        # [-> (CONV -> ACT)*P -> POOL]*(N/P) means it happens N//p times!!!
+        blockParams = dict(batchnorm=self.batchnorm, dropout=self.dropout, activation_type=self.activation_type,
+                                activation_params=self.activation_params)
+        bottleneck = self.bottleneck
+        block_channels = []
+        for i,channel  in enumerate(self.channels):
+            block_channels += [channel]
+            if ((i+1)%P) == 0:
+                out_channel = block_channels[-1]
+                if bottleneck and in_channels == out_channel:
+                    layers += [ResidualBottleneckBlock(
+                        in_out_channels=in_channels,
+                        inner_channels=block_channels[1:-1],
+                        inner_kernel_sizes=[3] * len(block_channels[1:-1]),
+                        **blockParams
+                    )]
+                else:
+                    layers += [ResidualBlock(
+                        in_channels=in_channels,
+                        channels=block_channels,
+                        kernel_sizes= [3] * P,
+                        **blockParams,
+                    )]
+                # update the channel for the net residualblock we make
+                in_channels = channel
+                block_channels =[] # empty it cuz we used it in block
+                # add a pooling layer (after the conv act * P)
+                layers += [pool(**self.pooling_params)]
+
+
+        # if we got here it means thre is some block_channels left!!
+        if N % P != 0:
+            out_channel = block_channels[-1]
+            if bottleneck and in_channels == out_channel:
+                layers += [ResidualBottleneckBlock(
+                    in_out_channels=in_channels,
+                    inner_channels=block_channels[1:-1],
+                    inner_kernel_sizes=[3] * len(block_channels[1:-1]),
+                    **blockParams
+                )]
+            else:
+                layers += [ResidualBlock(
+                    in_channels=in_channels,
+                    channels=block_channels,
+                    kernel_sizes=[3] * len(block_channels),
+                    **blockParams,
+                )]
 
         seq = nn.Sequential(*layers)
         return seq

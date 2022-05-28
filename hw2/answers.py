@@ -203,7 +203,7 @@ def part4_optim_hp():
     import torch.nn
     import torch.nn.functional
 
-    loss_fn = torch.nn.NLLLoss()  # One of the torch.nn losses
+    loss_fn = torch.nn.CrossEntropyLoss()  # One of the torch.nn losses
     lr, weight_decay, momentum = 0.01, 0.001, 0.9  # Arguments for SGD optimizer
 
     #  - Tweak the Optimizer hyperparameters.

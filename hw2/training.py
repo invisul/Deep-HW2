@@ -84,11 +84,17 @@ class Trainer(abc.ABC):
             #  - Use the train/test_epoch methods.
             #  - Save losses and accuracies in the lists above.
             train_result = self.train_epoch(dl_train, **kw)
+
             train_loss += train_result.losses
+            # train_loss.append(torch.mean(torch.Tensor(train_result.losses)).item())
+
             train_acc.append(train_result.accuracy)
 
             test_result = self.test_epoch(dl_test, **kw)
+
             test_loss += test_result.losses
+            # test_loss.append(torch.mean(torch.Tensor(test_result.losses)).item())
+
             test_acc.append(test_result.accuracy)
 
             #
@@ -272,7 +278,7 @@ class ClassifierTrainer(Trainer):
 
         # 1) forward pass
         self.optimizer.zero_grad()
-        y_pred = self.model.predict_proba(X)
+        y_pred = self.model(X)
 
         # y_pred = self.model.predict_proba(X.view(X.shape[0], -1))
         # y_pred = self.model.forward(X.view(X.shape[0], -1))

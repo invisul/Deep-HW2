@@ -21,10 +21,11 @@ class Classifier(nn.Module, ABC):
         self.model = model
 
         # Add any additional initializations here, if you need them.
-        if 'CNN' in str(type(self.model)):
-            self.softmax = nn.LogSoftmax(dim=1)
-        else:
-            self.softmax = nn.Softmax(dim=1)
+        self.softmax = nn.Softmax(dim=1)
+        # if 'CNN' in str(type(self.model)):
+        #     self.softmax = nn.LogSoftmax(dim=1)
+        # else:
+        #     self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x: Tensor) -> Tensor:
         """
@@ -86,9 +87,12 @@ class ArgMaxClassifier(Classifier):
     Multiclass classifier that chooses the maximal-probability class.
     """
     def _classify(self, y_proba: Tensor):
+        # assert (torch.argmax(y_proba, dim=1).int() == y_proba.argmax(1).int())
+        # print(f' left: {torch.argmax(y_proba, dim=1).int()}')
+        # print(f' right: {y_proba.argmax(1).int()}')
         #  Classify each sample to one of C classes based on the highest score.
         #  Output should be a (N,) integer tensor.
-        return torch.argmax(y_proba, dim=1).int()
+        return torch.argmax(y_proba, dim=1)
 
 
 class BinaryClassifier(Classifier):
