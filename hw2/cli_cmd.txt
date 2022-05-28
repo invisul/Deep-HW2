@@ -1,0 +1,1 @@
+python -m hw2.experiments run-exp --run-name=exp1_1 --model-type=cnn -K=32 -L=2 --pool-every=1 --hidden-dims=128 --seed=42 

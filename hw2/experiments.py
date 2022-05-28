@@ -11,19 +11,21 @@ from torchvision.datasets import CIFAR10
 
 from cs236781.train_results import FitResult
 
-# from .cnn import CNN, ResNet, YourCNN
+from .cnn import CNN, ResNet#, YourCNN
 from .mlp import MLP
 from .training import ClassifierTrainer
 from .classifier import ArgMaxClassifier, BinaryClassifier, select_roc_thresh
 
 # DATA_DIR = os.path.expanduser("~/.pytorch-datasets")
-#
-# MODEL_TYPES = {
-#     ###
-#     "cnn": CNN,
-#     "resnet": ResNet,
-#     "ycn": YourCNN,
-# }
+DATA_DIR = os.path.expanduser(r'C:\Users\prizd\Documents\datasets')
+
+
+MODEL_TYPES = {
+    ###
+    "cnn": CNN,
+    "resnet": ResNet,
+    #"ycn": YourCNN,
+}
 
 
 def mlp_experiment(
@@ -89,7 +91,7 @@ def cnn_experiment(
     seed=None,
     device=None,
     # Training params
-    bs_train=128,
+    bs_train=128,   # bs == batch size
     bs_test=None,
     batches=100,
     epochs=100,
@@ -131,7 +133,6 @@ def cnn_experiment(
         raise ValueError(f"Unknown model type: {model_type}")
     model_cls = MODEL_TYPES[model_type]
 
-    # TODO: Train
     #  - Create model, loss, optimizer and trainer based on the parameters.
     #    Use the model you've implemented previously, cross entropy loss and
     #    any optimizer that you wish.
@@ -139,9 +140,50 @@ def cnn_experiment(
     #  - The fit results and all the experiment parameters will then be saved
     #   for you automatically.
     fit_res = None
-    # ====== YOUR CODE: ======
-    raise NotImplementedError()
-    # ========================
+
+    # 0) create data loaders for the datasets
+    dl_train = torch.utils.data.DataLoader(ds_train, bs_train, shuffle=False)
+    dl_test = torch.utils.data.DataLoader(ds_test, bs_test, shuffle=False)
+
+    # 1) Model Creation
+    # 1.1) get the size of the input images
+    x0, _ = ds_train[0]
+    in_size = x0.shape
+    # 1.2) get the number of possible classes
+    num_classes = len(ds_train.classes)
+    # 1.3) calculate the channels array
+    channels = list(torch.repeat_interleave(torch.tensor(filters_per_layer), layers_per_block))
+    # 1.4) create the model instance
+    model = ArgMaxClassifier(model_cls(in_size=in_size,
+                                       out_classes=num_classes,
+                                       channels=channels,
+                                       pool_every=pool_every,
+                                       hidden_dims=hidden_dims,
+                                       conv_params=dict(kernel_size=3, stride=1, padding=1),
+                                       activation_type="relu",
+                                       pooling_type="max",
+                                       pooling_params=dict(kernel_size=2)))
+    # 1.5) transfer the model to device
+    # model = model.to(device)
+
+    # 2) create loss
+    loss = torch.nn.CrossEntropyLoss()
+
+    # 3) create optimizer
+    optimizer_hp = dict(lr=lr, weight_decay=reg)
+    optimizer = torch.optim.RMSprop(params=model.parameters(), **optimizer_hp)
+
+    # 4) create trainer
+    trainer = ClassifierTrainer(model, loss, optimizer, device)
+
+    # 5) run training
+    fit_res = trainer.fit(dl_train,
+                          dl_test,
+                          num_epochs=epochs,
+                          checkpoints=checkpoints,
+                          early_stopping=early_stopping,
+                          max_batches=batches,
+                          **kw)
 
     save_experiment(run_name, out_dir, cfg, fit_res)
 
