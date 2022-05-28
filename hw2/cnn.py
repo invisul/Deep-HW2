@@ -364,7 +364,7 @@ class ResNet(CNN):
         bottleneck = self.bottleneck
         block_channels = []
         for i,channel  in enumerate(self.channels):
-            block_channels += channel
+            block_channels += [channel]
             if ((i+1)%P) == 0:
                 out_channel = block_channels[-1]
                 if bottleneck and in_channels == out_channel:
@@ -402,7 +402,7 @@ class ResNet(CNN):
                 layers += [ResidualBlock(
                     in_channels=in_channels,
                     channels=block_channels,
-                    kernel_sizes=[3] * P,
+                    kernel_sizes=[3] * len(block_channels),
                     **blockParams,
                 )]
 
