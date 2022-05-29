@@ -282,3 +282,5 @@ $RECYCLE.BIN/
 
 
 # End of https://www.gitignore.io/api/python,pycharm,windows,osx,linux
+
+/hw2/backup2/classifier.py
