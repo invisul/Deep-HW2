@@ -97,7 +97,7 @@ def cnn_experiment(
     epochs=100,
     early_stopping=3,
     checkpoints=None,
-    lr=1e-3,
+    lr=1e-2,
     reg=1e-3,
     # Model params
     filters_per_layer=[64],
@@ -171,7 +171,9 @@ def cnn_experiment(
 
     # 3) create optimizer
     optimizer_hp = dict(lr=lr, weight_decay=reg)
-    optimizer = torch.optim.RMSprop(params=model.parameters(), **optimizer_hp)
+    # optimizer = torch.optim.RMSprop(params=model.parameters(), **optimizer_hp)
+    optimizer = torch.optim.AdamW(params=model.parameters(), **optimizer_hp)
+
 
     # 4) create trainer
     trainer = ClassifierTrainer(model, loss, optimizer, device)
