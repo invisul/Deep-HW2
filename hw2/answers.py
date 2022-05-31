@@ -9,14 +9,81 @@ math (delimited with $$).
 # Part 1 (Backprop) answers
 
 part1_q1 = r"""
-1A. The Jacobian is a $64x1024x64x512$ tensor. This is because we derive each element of the output matrix ($64x512$)
- by each element of the input matrix ($64x1024$).  
-1B. This Jacobian is indeed sparse. This is because the linear model multiplies each input row by the weights, which
- produces the output row for that sample. E.g. The derivatives of each element in the output matrix that do not belong to
+### Question 1A
+Let's consider an input $\mat{X}_{N \times f}$ where $N$ is the number of samples in the batch and $f$ is the number of
+ features in each sample. Let's also consider a linear layer with the weight matrix $\mat{W}_{m \times f}$ where $m$ is the
+ number of output features (e.g the number of units in the layer). Hence, the size of the layer's output matrix $\mat{Y} = \mat{X} \mat{W}^T$ is $N \times m$.  
+We want to derive each element in $\mat{Y}$ by each element in $\mat{X}$.
+ Therefore, the gradient $\pderiv{Y}{X}$ has the size  $N \times m \times N \times f$.  
+Using the numbers given in the question, the size of the Jacobian is $64x512x64x1024$.
+
+### Question 1B
+This Jacobian is indeed sparse. This is because the linear model multiplies each input row by the weights, which
+ produces the output row for that sample. In other words, $Y_{i,j} = X^{(i)} \cdot W^{(j)}$ where $X^{(i)}$ is the $i^{th}$ row of $\mat{X}$
+ and $W^{(j)}$ is the $j^{th}$ row of $\mat{W}$. Note that $\pderiv{Y_{i,j}}{X}$ (the derivation of one element in $\mat{Y}$)
+ is a matrix the same size as $\mat{X}_{64 \times 1024}$. Since $Y_{i,j}$ depends only on the elements in $X^{(i)}$, we get:
+ $$
+ \pderiv{Y_{i,j}}{\mat{X}}_{64 \times 1024}^{(k)} = \begin{cases}
+\mat{W}^{(j)}, & k=i\\
+0            ,  & \text{else}
+\end{cases}
+ $$
+ E.g. The derivatives of each element in the output matrix that do not belong to
  the corresponding row in the input matrix are zero. Since the vast majority of these elements do not belong to the
  corresponding row, the vast majority of the elements in this tensor are zero, which makes the tensor sparse.  
-1C. TODO: We **DO NOT** need to materialize the entire Jacobian since it is sparse.  
-2A. 
+ 
+### Question 1C
+We **DO NOT** need to materialize the entire Jacobian since it is sparse. Instead of deriving $L$ by the entire matrix $\mat{X}$
+ (e.g deriving by the elements of all samples), we can derive sample-by-sample.  
+Note that:  
+$$
+\mat{Y}_{[1 \times 512]}^{(i)} = \mat{X}_{[1 \times 1024]}^{(i)} \cdot \mat{W}_{[1024 \times 512]}^T \\
+\Rightarrow \pderiv{\mat{Y}^{(i)}}{\mat{X}^{(i)}} = \mat{W}
+$$
+Using the chain rule:
+$$
+\pderiv{L}{\mat{X}^{(i)}}_{[1 \times 1024]} = \pderiv{L}{\mat{Y}^{(i)}}_{[1 \times 512]} \cdot \pderiv{\mat{Y}^{(i)}}{\mat{X}^{(i)}}_{[512 \times 1024]}
+$$ 
+Since we are given $\pderiv{L}{\mat{Y}}$ and $\pderiv{L}{\mat{Y}^{(i)}} = \pderiv{L}{\mat{Y}}^{(i)}$,
+$$
+\delta \mat{X}^{(i)} = \pderiv{L}{\mat{X}^{(i)}} = \pderiv{L}{\mat{Y}}^{(i)} \cdot \mat{W}
+$$
+We can see that this way, instead of materializing a $64 \times 512 \times 64 \times 1024$ tensor, we only need the
+ weight matrix $\mat{W}$ (which is already in memory) to perform gradient calculations of the loss for all samples.
+
+### Question 2A
+As before, we want to derive each element in $\mat{Y}_{N \times m}$ matrix by each each element in $\mat{W}_{m \times f}$.  
+This is a $N \times m \times m \times f = 64 \times 512 \times 512 \times 1024$ tensor.
+ 
+### Question 2B
+This Jacobian is also sparse. As before,
+$$
+\pderiv{Y_{i,j}}{\mat{W}}_{512 \times 1024}^{(k)} = \begin{cases}
+\mat{X}^{(i)}, & k=j\\
+0            ,  & \text{else}
+\end{cases}
+$$
+This is because the element $\mat{Y}_{i,j}$ is the dot product of the sample $X^{(i)}$ and the weights of
+ the linear unit $W^{(j)}$, so the weights of any other linear unit are irrelevant for the calculation, and thus
+ deriving by those elements results in 0.
+
+### Question 2C
+We **DO NOT** need to materialize the entire Jacobian. We can use the same trick as before - deriving the loss with
+ respect to the weights of only one linear unit at a time. Here, we will look at the columns of $\mat{Y}$ instead of
+ the rows (the "$(i)$" index will represent a column instead of a row). We get:
+$$
+\mat{Y}_{[64 \times 1]}^{(i)} = \mat{X}_{[64 \times 1024]} \cdot {\mat{W}^T}_{[1024 \times 1]}^{(i)} \\
+\Rightarrow \pderiv{\mat{Y}^{(i)}}{\mat{W}^{(i)}} = \mat{X}
+$$
+Using the chain rule:
+$$
+\pderiv{L}{\mat{W}^{(i)}}_{[1 \times 1024]} = \pderiv{L}{\mat{Y}^{(i)}}_{[1 \times 64]} \cdot \pderiv{\mat{Y}^{(i)}}{\mat{W}^{(i)}}_{[64 \times 1024]} \\
+\Rightarrow \delta \mat{W}^{(i)} = \pderiv{L}{\mat{W}^{(i)}} = \pderiv{L}{\mat{Y}}^{(i)} \cdot \mat{X}
+$$ 
+Where the index "$(i)$" is a row index in $\mat{W}$ (the weight of a single linear unit) 
+ and a column index in $\pderiv{L}{\mat{Y}}$ (the derivatives of the loss concerning the same linear unit).
+
+
 """
 
 part1_q2 = r"""
@@ -58,7 +125,7 @@ def part2_optim_hp():
 
 def part2_dropout_hp():
     wstd, lr, = (
-        1e-4,
+        1e-2,
         1e-5,
     )
     # Tweak the hyperparameters to get the model to overfit without
@@ -67,28 +134,21 @@ def part2_dropout_hp():
 
 
 part2_q1 = r"""
-**Your answer:**
-
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
-
+1.  We expect that increasing the dropout will increase the generalization of the model.
+    We can see in the graphs that the best test accuracy was with dropout=0.4 and the best train accuracy was with dropout=0.
+    It is clear that at least in the low dropout 
+       Based on the graphs we can infer that no-dropout configuration graph that the model tend to overfitting and increasing the dropout to 0.4
+       indeed helped the generalization ability of the model as we expected. 
+       When increasing the dropout to 0.8 there is a drop in the test accuracy. We think it's because using such high dropout reduce sagnificantly the 
+       effective amout of data we consider in each step of the optimization process and therefore we gets reasults that are wore than the dropout 0.4 
+       configuration. Notice that the test accuracy still better than the accuracy of no dropout and the test loss pretty close to the lose of th 0.4
+       configuration emplying that even using high dropout value is better than no dropout at all.
 """
 
 part2_q2 = r"""
-**Your answer:**
-
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+Since the cross entropy loss is not upper-bound, a single very wrong prediction can potentially make
+your loss increase. In that case, if we add this single wrong prediction, and two good predictions which 
+"cost" less, the loss will increase while the accuracy will also increase. 
 
 """
 
