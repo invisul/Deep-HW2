@@ -134,15 +134,16 @@ def part2_dropout_hp():
 
 
 part2_q1 = r"""
-1.  We expect that increasing the dropout will increase the generalization of the model.
-    We can see in the graphs that the best test accuracy was with dropout=0.4 and the best train accuracy was with dropout=0.
-    It is clear that at least in the low dropout 
-       Based on the graphs we can infer that no-dropout configuration graph that the model tend to overfitting and increasing the dropout to 0.4
-       indeed helped the generalization ability of the model as we expected. 
-       When increasing the dropout to 0.8 there is a drop in the test accuracy. We think it's because using such high dropout reduce sagnificantly the 
-       effective amout of data we consider in each step of the optimization process and therefore we gets reasults that are wore than the dropout 0.4 
-       configuration. Notice that the test accuracy still better than the accuracy of no dropout and the test loss pretty close to the lose of th 0.4
-       configuration emplying that even using high dropout value is better than no dropout at all.
+### Questions 1.1 and 1.2
+We expect that increasing the dropout slightly will increase the generalization of the model, but too much dropout 
+ will hamper the speed of the training process since less features are learnt in each epoch.  
+The graphs match these expectations: 
+* We can see that for `dropout=0` the accuracy on the training set is almost always larger than for the larger dropout
+ values by a considerable margin, but on the test set the accuracy for `dropout=0.4` is usually higher. This implies
+ overfitting for the `dropout=0` training process, hence the `dropout=0.4` generalizes better.
+* The `dropout=0.8` graph is less accurate on both training and test sets for most epochs, but we can see that the
+ accuracy on both sets gradually increases, and in the last epochs the accuracy on the test set is similar to the
+ other two dropout settings. This matches out expectation for too much dropout.
 """
 
 part2_q2 = r"""
@@ -153,16 +154,36 @@ your loss increase. In that case, if we add this single wrong prediction, and tw
 """
 
 part2_q3 = r"""
-**Your answer:**
+### Question 3.1
+* Gradient Descent is a first-order iterative optimization algorithm for finding a local minimum of a differentiable
+ function. The idea is to take repeated steps in the opposite direction of the gradient (or approximate gradient) of the
+ function at the current point, because this is the direction of steepest descent.
+* Back-Propagation is an algorithm for training artificial neural networks **using Gradient Descent**.
+ the method calculates the gradient of the error function with respect to the neural network's weights.
+ Taking advantage of the chain rule, calculation of the gradient proceeds backwards through the network,
+ with the gradient of the final layer of weights being calculated first and the gradient of the first layer of weights
+ being calculated last. This way, the gradients required for the Gradient Descent algorithm can be computed efficiently.
+ 
+ 
+### Question 3.2
+|                                     Gradient Descent (GD)                                    |                                                            Stochastic Gradient Descent (SGD)                                                           |
+|:--------------------------------------------------------------------------------------------:|:------------------------------------------------------------------------------------------------------------------------------------------------------:|
+|                 Error is summed over all samples before updating the weights                 |                              Samples are chosen at a random order. Weights are updated upon examining each training sample                             |
+|             Expensive in terms of memory. Not suggested for huge training samples            |                                      Can be used for huge training samples since only one sample is run at a time                                      |
+|                            Prone to fall into shallow local minima                           |                                                           Can avoid falling into local minima                                                          |
+|                                No random shuffling is required                               |                                                       Random shuffling is required for each epoch                                                      |
+| Given sufficient time to converge, result is optimal on the training set (can be an overfit) | Solution is good but not optimal on the training set since only one sample is examined when reaching the solution (can lead to better generalization)  |
 
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
 
+### Question 3.3
+* SGD can handle huge datasets, while GD requires loading the entire set to memory, which is not always possible.
+* Depending on the initialization and learning rate, GD can converge to a shallow local minima (in deep leaning and
+ machine learning in general, it is common that the loss function has many shallow minima). SGD can avoid falling into
+ these, although it is not guaranteed.
+* GD will converge to the optimal solution on the **training set**, which can lead to overfitting since the samples in
+ the validation/test sets do not contribute to the loss. The fact that SGD uses a random sample each time can help
+ prevent that.
 """
 
 
