@@ -294,6 +294,7 @@ class ResidualBottleneckBlock(ResidualBlock):
         """
         assert len(inner_channels) > 0
         # assert len(inner_channels) == len(inner_kernel_sizes)
+
         assert len(inner_channels) == len(inner_kernel_sizes)
         #  Initialize the base class in the right way to produce the bottleneck block
         #  architecture.
@@ -406,7 +407,7 @@ class ResNet(CNN):
 
 class InceptionBlock(nn.Module):
 
-    def __init__(self, in_channels, c_red: dict, c_out: dict, act_fn):
+    def __init__(self, in_channels, c_red: dict, c_out: dict, act_fn, dropout):
         """
         Inputs:
             in_channels - Number of input feature maps from the previous layers
@@ -415,10 +416,15 @@ class InceptionBlock(nn.Module):
             act_fn - Activation class constructor (e.g. nn.ReLU)
         """
         super().__init__()
+        if 0 < dropout < 1:
+            args = nn.Dropout2d(dropout)
+        else:
+            args = nn.Identity()
 
         # 1x1 convolution branch
         self.conv_1x1 = nn.Sequential(
             nn.Conv2d(in_channels, c_out["1x1"], kernel_size=1),
+            args,
             nn.BatchNorm2d(c_out["1x1"]),
             act_fn()
         )
@@ -426,6 +432,7 @@ class InceptionBlock(nn.Module):
         # 3x3 convolution branch
         self.conv_3x3 = nn.Sequential(
             nn.Conv2d(in_channels, c_red["3x3"], kernel_size=1),
+            args,
             nn.BatchNorm2d(c_red["3x3"]),
             act_fn(),
             nn.Conv2d(c_red["3x3"], c_out["3x3"], kernel_size=3, padding=1),
@@ -436,6 +443,7 @@ class InceptionBlock(nn.Module):
         # 5x5 convolution branch
         self.conv_5x5 = nn.Sequential(
             nn.Conv2d(in_channels, c_red["5x5"], kernel_size=1),
+            args,
             nn.BatchNorm2d(c_red["5x5"]),
             act_fn(),
             nn.Conv2d(c_red["5x5"], c_out["5x5"], kernel_size=5, padding=2),
@@ -447,6 +455,7 @@ class InceptionBlock(nn.Module):
         self.max_pool = nn.Sequential(
             nn.MaxPool2d(kernel_size=3, padding=1, stride=1),
             nn.Conv2d(in_channels, c_out["max"], kernel_size=1),
+            args,
             nn.BatchNorm2d(c_out["max"]),
             act_fn()
         )
@@ -461,12 +470,12 @@ class InceptionBlock(nn.Module):
 
 
 class MyInceptionBlock(InceptionBlock):
-    def __init__(self, in_channels, out_channels, c_red: dict, c_out: dict, act_fn):
-        super().__init__(in_channels, c_red, c_out, act_fn)
+    def __init__(self, in_channels, out_channels, c_red: dict, c_out: dict, act_fn, dropout):
+        super().__init__(in_channels, c_red, c_out, act_fn,dropout)
         inception_channels_out = sum([val for _, val in c_out.items()])
         conv_out = torch.nn.Conv2d(in_channels=inception_channels_out,
                                    kernel_size=1,
-                                   out_channels=out_channels)
+                                   out_channels=int(sum(out_channels)))
         self.conv_out = nn.Sequential(conv_out, act_fn())
 
 
@@ -517,33 +526,26 @@ class YourCNN(CNN):
         N = len(self.channels)
         P = self.pool_every
 
+        act_fun = torch.nn.LeakyReLU
+        dropout = 0.4
+
         # num_of_blocks = N//P
-        activations = ACTIVATIONS[self.activation_type]
         pool = POOLINGS[self.pooling_type]
 
         # [-> (CONV -> ACT)*P -> POOL]*(N/P) means it happens N//p times!!!
-        blockParams = dict(batchnorm=self.batchnorm, dropout=self.dropout, activation_type=self.activation_type,
-                                activation_params=self.activation_params)
-        bottleneck = self.bottleneck
         block_channels = []
         for i,channel  in enumerate(self.channels):
             block_channels += [channel]
             if ((i+1)%P) == 0:
-                out_channel = block_channels[-1]
-                if bottleneck and in_channels == out_channel:
-                    layers += [ResidualBottleneckBlock(
-                        in_out_channels=in_channels,
-                        inner_channels=block_channels[1:-1],
-                        inner_kernel_sizes=[3] * len(block_channels[1:-1]),
-                        **blockParams
-                    )]
-                else:
-                    layers += [ResidualBlock(
-                        in_channels=in_channels,
-                        channels=block_channels,
-                        kernel_sizes= [3] * P,
-                        **blockParams,
-                    )]
+                # in_channels, out_channels, c_red: dict, c_out: dict, act_fn,dropout
+                layers += [MyInceptionBlock(
+                    in_channels=in_channels,
+                    out_channels= block_channels,
+                    c_red = {"3x3": 32, "5x5": 16},
+                    c_out= {"1x1": 16, "3x3": 32, "5x5": 8, "max": 8},
+                    act_fn=act_fun,
+                    dropout=dropout
+                )]
                 # update the channel for the net residualblock we make
                 in_channels = channel
                 block_channels =[] # empty it cuz we used it in block
@@ -553,21 +555,16 @@ class YourCNN(CNN):
 
         # if we got here it means thre is some block_channels left!!
         if N % P != 0:
-            out_channel = block_channels[-1]
-            if bottleneck and in_channels == out_channel:
-                layers += [ResidualBottleneckBlock(
-                    in_out_channels=in_channels,
-                    inner_channels=block_channels[1:-1],
-                    inner_kernel_sizes=[3] * len(block_channels[1:-1]),
-                    **blockParams
-                )]
-            else:
-                layers += [ResidualBlock(
+                layers += [MyInceptionBlock(
                     in_channels=in_channels,
-                    channels=block_channels,
-                    kernel_sizes=[3] * len(block_channels),
-                    **blockParams,
+                    out_channels= sum(block_channels),
+                    c_red = {"3x3": 32, "5x5": 16},
+                    c_out= {"1x1": 16, "3x3": 32, "5x5": 8, "max": 8},
+                    act_fn=act_fun,
+                    dropout=dropout
                 )]
+        if dropout > 0:
+            layers += [nn.Dropout2d(dropout)]
 
         seq = nn.Sequential(*layers)
         return seq

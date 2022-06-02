@@ -1,6 +1,5 @@
 r"""
 Use this module to write your answers to the questions in the notebook.
-
 Note: Inside the answer strings you can use Markdown format and also LaTeX
 math (delimited with $$).
 """
@@ -16,7 +15,6 @@ Let's consider an input $\mat{X}_{N \times f}$ where $N$ is the number of sample
 We want to derive each element in $\mat{Y}$ by each element in $\mat{X}$.
  Therefore, the gradient $\pderiv{Y}{X}$ has the size  $N \times m \times N \times f$.  
 Using the numbers given in the question, the size of the Jacobian is $64x512x64x1024$.
-
 ### Question 1B
 This Jacobian is indeed sparse. This is because the linear model multiplies each input row by the weights, which
  produces the output row for that sample. In other words, $Y_{i,j} = X^{(i)} \cdot W^{(j)}$ where $X^{(i)}$ is the $i^{th}$ row of $\mat{X}$
@@ -50,7 +48,6 @@ $$
 $$
 We can see that this way, instead of materializing a $64 \times 512 \times 64 \times 1024$ tensor, we only need the
  weight matrix $\mat{W}$ (which is already in memory) to perform gradient calculations of the loss for all samples.
-
 ### Question 2A
 As before, we want to derive each element in $\mat{Y}_{N \times m}$ matrix by each each element in $\mat{W}_{m \times f}$.  
 This is a $N \times m \times m \times f = 64 \times 512 \times 512 \times 1024$ tensor.
@@ -66,7 +63,6 @@ $$
 This is because the element $\mat{Y}_{i,j}$ is the dot product of the sample $X^{(i)}$ and the weights of
  the linear unit $W^{(j)}$, so the weights of any other linear unit are irrelevant for the calculation, and thus
  deriving by those elements results in 0.
-
 ### Question 2C
 We **DO NOT** need to materialize the entire Jacobian. We can use the same trick as before - deriving the loss with
  respect to the weights of only one linear unit at a time. Here, we will look at the columns of $\mat{Y}$ instead of
@@ -82,8 +78,6 @@ $$
 $$ 
 Where the index "$(i)$" is a row index in $\mat{W}$ (the weight of a single linear unit) 
  and a column index in $\pderiv{L}{\mat{Y}}$ (the derivatives of the loss concerning the same linear unit).
-
-
 """
 
 part1_q2 = r"""
@@ -150,7 +144,6 @@ part2_q2 = r"""
 Since the cross entropy loss is not upper-bound, a single very wrong prediction can potentially make
 your loss increase. In that case, if we add this single wrong prediction, and two good predictions which 
 "cost" less, the loss will increase while the accuracy will also increase. 
-
 """
 
 part2_q3 = r"""
@@ -173,9 +166,6 @@ part2_q3 = r"""
 |                            Prone to fall into shallow local minima                           |                                                           Can avoid falling into local minima                                                          |
 |                                No random shuffling is required                               |                                                       Random shuffling is required for each epoch                                                      |
 | Given sufficient time to converge, result is optimal on the training set (can be an overfit) | Solution is good but not optimal on the training set since only one sample is examined when reaching the solution (can lead to better generalization)  |
-
-
-
 ### Question 3.3
 * SGD can handle huge datasets, while GD requires loading the entire set to memory, which is not always possible.
 * Depending on the initialization and learning rate, GD can converge to a shallow local minima (in deep leaning and
@@ -184,6 +174,35 @@ part2_q3 = r"""
 * GD will converge to the optimal solution on the **training set**, which can lead to overfitting since the samples in
  the validation/test sets do not contribute to the loss. The fact that SGD uses a random sample each time can help
  prevent that.
+ 
+ 
+ 
+### Question 3.4.A
+Lets recall the equation for the gradient descent algorithm:
+$$
+\vec{\theta} \leftarrow \vec{\theta} - \eta \nabla_{\vec{\theta}} L(\vec{\theta}; \mathcal{D})
+$$
+where $\mathcal{D} = \left\{ (\vec{x}^i, \vec{y}^i) \right\}_{i=1}^{M}$ is our training dataset or part of it.  
+  
+Note that if $1 < M < N$, a backward pass on each $i$ will make the algorithm mini-batch gradient descent. The suggested
+ approach does not backward-pass each mini-batch, so it is not the mini-batch GD algorithm (where the gradient is not
+ equivalent to GD). In the suggested approach, the gradient will equal the gradient in GD if:
+$$
+L\left(\theta, \mathcal{D} = \left\{ (\vec{x}^i, \vec{y}^i) \right\}_{i=1}^{N}\right) = \sum_{j=1}^{m=N/k} L\left(\theta, \mathcal{D} = \left\{ (\vec{x}^i, \vec{y}^i) \right\}_{i=j \cdot k}^{(j+1) \cdot k}\right)
+$$
+E.g the loss for a forward pass on the entire dataset is equal to the sum of the losses for all minibatches in the dataset.  
+If the above condition is true, then:
+$$
+\nabla_{\theta}L(\theta, D) = \sum_j \nabla_{\theta}L(\theta, D_j)
+$$
+E.g the gradient with respect to $\theta$ on the entire set is equal to the sum of the gradients on the mini-batches).
+ In many loss functions this is usually the case, but since the loss function was not defined in the question we cannot 
+ determine the suggested method will produce the same gradient with full certainty.
+ 
+### Question 3.4.B
+For each forward pass, we need to store some data to be used in the backward pass. The memory was depleated probably due
+ to saving this data for all previous forward passes.
+
 """
 
 
@@ -225,56 +244,64 @@ def part3_optim_hp():
 
 
 part3_q1 = r"""
-**Your answer:**
-
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
-
+* Our model **Does Not** have a high optimization error. Based on the loss and accuracy graphs for the training set,
+ it seems that the model has converged to a local minima, and more epochs will not improve the results by much. 
+ 
+* Our model **has** a considerable generalization error. We can see from
+ the loss graph that there is a considerable gap between the average loss on the training set and the average loss on
+ the test set. We can also see that from the accuracy graph. This clearly suggests that the model was overfitted to the
+ training set, so a generalization error does exists.
+ 
+* Our model **Does** have a high approximation error. It can be seen clearly from the accuracy graph on the test set,
+ which does not stabilizes even in the last epochs.
 """
 
 part3_q2 = r"""
-**Your answer:**
-
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
-
+Looking at the graphs of the generated datasets, we can clearly see that there are more "class 1" (orange) samples in
+ areas which are dominated by "class 0" (blue) samples, but not the other way around. Since the training process will
+ try to minimize the loss on the generated samples, we expect that the model will classify samples in a blue dominated
+ area as "0" and in orange dominated areas as "1". Since there are many more "1"s in "0" dominated areas than the other
+ way around, **we expect a higher rate of false negatives than of false positives**. This is true for all sets,
+ including the validation set.
 """
 
 part3_q3 = r"""
-**Your answer:**
-
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
-
+In neither case we would choose the "optimal" point on the ROC curve.
+1. In the case where the illness causes non-lethal symptoms, the cost and the risk of the second test do not justify
+ sending borderline cases to do it. We would choose a point on the ROC curve which increases the False negative rate,
+ (which may result in decreasing the true positive rate). In this way, only clear cases will be sent to the second test.
+ 
+2. In the case where the illness will cause death with high probability, it is better to send borderline cases to the
+ second test in order to increase the probability of saving lives. We would choose a point on the ROC curve that
+ increases the false positive rate (and may decrease the true negative rate), in order to try to decrease the number
+ of cases in which the illness is not diagnosed in a patient.
 """
 
 
 part3_q4 = r"""
-**Your answer:**
+### Questions 4.1 + 4.2
+We can clearly see that the model's accuracy increases with the width of each layer. The decision boundary is
+ considerably more accurate when moving from a lowe width to a higher width. This is true for all depths. 
+This does not imply that increasing the depth does not matter at all, as we can see improvement when increasing the
+ number of layers, but for each depth, a big "jump" in accuracy occurs when increasing the width of each layer.
 
+### Question 4.3
+* Both models have similar accuracies (the deeper model has a slightly better accuracy on both validation and 
+ test sets), but we can clearly see the difference in the decision boundary plot, which is more accurate for the deeper
+ model. This implies that the deeper model generalizes better.
+ 
+* A similar phenomenon occurs in the second case.
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+The more accurate decision boundary on the deeper model in both cases (although the number of parameters is the same)
+ can be explained by the fact that deeper model can learn more complex features and thus the possibility for a
+ more accurate decision boundary increases with the depth of the network.
 
+### Question 4.4
+By plotting the decision boundary on the training set, we can see that without changing the threshold, the decision
+ boundary will (over) fit the training samples, but will not be as accurate on the validation set. By using the
+ validation set for threshold selection, we increase the model's performance on data that the model was not
+ trained with, leading to better generalization. For this reason, selecting the optimal threshold also improves the
+ results on the test set.
 """
 # ==============
 # Part 4 (CNN) answers
@@ -296,17 +323,54 @@ def part4_optim_hp():
 
 
 part4_q1 = r"""
-**Your answer:**
+### Question 1.1
+Bottleneck block:
+$$
+\text{number of parameters} = \underbrace{\overbrace{1 \times 1}^{\text{kernel size}} \times \overbrace{256}^{\text{channels in}}
+\times \overbrace{64}^{\text{channels out}} + \overbrace{64}^{\text{bias}}}_{1^{st} \text{conv layer}} + 
+\underbrace{\overbrace{3 \times 3}^{\text{kernel size}} \times \overbrace{64}^{\text{channels in}}
+\times \overbrace{64}^{\text{channels out}} + \overbrace{64}^{\text{bias}}}_{2^{nd} \text{conv layer}} + 
+\underbrace{\overbrace{1 \times 1}^{\text{kernel size}} \times \overbrace{64}^{\text{channels in}}
+\times \overbrace{256}^{\text{channels out}} + \overbrace{256}^{\text{bias}}}_{3^{rd} \text{conv layer}} = 70,016
+$$
+Regular block:
+$$
+\text{number of parameters} = \underbrace{\overbrace{3 \times 3}^{\text{kernel size}} \times \overbrace{256}^{\text{channels in}}
+\times \overbrace{64}^{\text{channels out}} + \overbrace{64}^{\text{bias}}}_{1^{st} \text{conv layer}} + 
+\underbrace{\overbrace{3 \times 3}^{\text{kernel size}} \times \overbrace{64}^{\text{channels in}}
+\times \overbrace{256}^{\text{channels out}} + \overbrace{256}^{\text{bias}}}_{2^{nd} \text{conv layer}} = 295,241
+$$
 
 
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+### Question 1.2
+A single convolution kernel with the size of $ k \times k \times c $ will perform $k \times k \times c$ multiplications
+ and $k \times k \times c - 1$ additions (with the bias parameter we get the same number of multiplications and
+ additions). Note that floating point multiplication can be faster than floating point addition, depending on the
+ architecture of the processor, so for the sake of this question we will treat them as having the same time.
+So, for each input pixel (across all channels), we perform $ 2 \times k \times k \times c $ FP operations.
+We'll mark $S_{[\text{num of pixels}]}$ as the number of the pixels in the input image, E.G the number of times we need to
+ apply the convolution filter.  
+Bottleneck block:
+$$
+\text{num of FP operations} = 2 \times \overbrace{1^2}^{\text{filter size}} \times \overbrace{256}^{\text{input channels}} \times \overbrace{64}^{\text{output channels}} 
+\times S + 2 \times \overbrace{3^2}^{\text{filter size}} \times \overbrace{64}^{\text{input channels}} \times \overbrace{64}^{\text{output channels}} \times S +
+2 \times \overbrace{1^2}^{\text{filter size}} \times \overbrace{64}^{\text{input channels}} \times \overbrace{256}^{\text{output channels}} \times S \\
+= 2 \times S \times 69,632 = 139,264 \times S
+$$
+Regular Block:
+$$
+\text{num of FP operations} = 2 \times \overbrace{3^2}^{\text{filter size}} \times \overbrace{256}^{\text{input channels}} \times \overbrace{64}^{\text{output channels}} \times S +
+2 \times \overbrace{3^2}^{\text{filter size}} \times \overbrace{64}^{\text{input channels}} \times \overbrace{256}^{\text{output channels}} \times S = 
+4 \times 9 \times 64 \times 256 \times S = 589,824 \times S
+$$
 
+### Question 1.3
+The bottleneck has 1 3x3 layer and 1 1x1 convolutions which does not provide spatial abilities across feature maps
+unlike the standard block which has 2 3x3 convolution layers. 
+since bottleneck reduces the number of channels and combines across multiple channels  it combines better across feature maps
+unlike the standard block which doesnt alter the number of channels.
 """
+#  2 \times S \times 69632 = 139,264 \times S
 
 # ==============
 
@@ -315,67 +379,56 @@ An equation: $e^{i\pi} -1 = 0$
 
 
 part5_q1 = r"""
-**Your answer:**
-
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
-
+### Question 1.1
+We can see that for `K=32` and for `K=64`, increasing the depth did not necessarily increase the accuracy on the test
+ set. We can see that for both Ks `L=8` achieved the best accuracy overall, with L16 close behind.  
+ Notice that when increasing L, the gap between the train accuracy to the test accuracy decreases. This means that
+ the deeper networks are less overfitted, on in other words, generalize better.
+ Another seen to notice - it can clearly be seen that the learning rate was slower for each increased depth. 
+ The implications of this can be seen in all of the graphs, where L4 and L8 took less time to converge 
+ (E.G reach early stopping). The odd case being L2, since it learned slower than L4 and L8 but faster than L16.
+ 
+### Question 1.2
+There were no L values for which the network was not trainable. It did happen for L=16 when the learning rate was
+ 0.01, but when we lowered it to 0.001 it became trainable. 
 """
 
 part5_q2 = r"""
-**Your answer:**
-
-
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
-
+In this experiment, for the sake of saving time, we lowered the batch size to 100 (350 before) and the early stopping
+ to 3 (5 before). The results were sometimes still comparable to the results from the previous section, (which had
+ a larger batch size and more epochs to train), but mostly the accuracies were lower than the previous experiment for
+ the same configuration. In the previous configuration, early stopping could sometimes take ~40 minutes for each
+ configuration, and we could not afford it. This shows the importance of training with larger batch sizes and enough
+ epochs to escape local minima.
 """
 
 part5_q3 = r"""
 **Your answer:**
-
-
 Write your answer using **markdown** and $\LaTeX$:
 ```python
 # A code block
 a = 2
 ```
 An equation: $e^{i\pi} -1 = 0$
-
 """
 
 part5_q4 = r"""
 **Your answer:**
-
-
 Write your answer using **markdown** and $\LaTeX$:
 ```python
 # A code block
 a = 2
 ```
 An equation: $e^{i\pi} -1 = 0$
-
 """
 
 part5_q5 = r"""
 **Your answer:**
-
-
 Write your answer using **markdown** and $\LaTeX$:
 ```python
 # A code block
 a = 2
 ```
 An equation: $e^{i\pi} -1 = 0$
-
 """
 # ==============
