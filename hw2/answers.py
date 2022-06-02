@@ -428,11 +428,22 @@ We can dee that the deeper the model,
 
 part5_q5 = r"""
 **Your answer:**
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+1.The first architecture we attempted to implement was the non-naive inception block module architecture. 
+where each block contains 4 paths. 
+the first path contains a 1x1 convolution  and a normalization afterwards
+the second path contains two instances of 3x3 convolutions following a Bathnorm2d afterwards
+the third path contains a 5x5 convolution and normalization
+the fourth path is a max pooling path which contains MaxPool2d and a convoution afterwards.
+
+the architecture we ended up using is resnet with batchnorm , bottlenecks. 
+we noticed that adding the batchnorm caused a big improvement in accuracy by handling vanishing gradients
+
+
+
+2.we reached a higher accuracy on the test set than the accuracy reached in experiment 1, we reached accuracy of around 
+78% accuracy. 
+
+*noticed - using a different framed work (pytorch lightning) we reached around 90% accuracy using the inception block 
+with a googlenet module, with the following enhancement - scheduler for the learning rate.
 """
 # ==============
