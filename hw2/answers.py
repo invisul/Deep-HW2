@@ -398,28 +398,32 @@ In this experiment, for the sake of saving time, we lowered the batch size to 10
  to 3 (5 before). The results were sometimes still comparable to the results from the previous section, (which had
  a larger batch size and more epochs to train), but mostly the accuracies were lower than the previous experiment for
  the same configuration. In the previous configuration, early stopping could sometimes take ~40 minutes for each
- configuration, and we could not afford it. This shows the importance of training with larger batch sizes and enough
- epochs to escape local minima.
+ configuration with relatively small number of parameters (much more for larger configurations), 
+ and we could not afford it. This shows the importance of training with larger batch sizes and enough
+ epochs to escape local minima.  
+   
+In this experiment we can see that brute force works. Increasing the amount of layers while increasing the number of
+ filters in each layer generally results in better accuract on the test set. The exception is with L=2 and K>=64,
+ which for some reason gets much lower accuracy than the rest of the configurations. The best accuracy is achieved in
+ the configuration of L=8 K=256. However, this configuration is very costly to train, and the difference between its
+ accuracy and the accuracies of some of the other configurations which have much less parameters is 
 """
 
 part5_q3 = r"""
-**Your answer:**
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+In this experiment we had to change a few parameters in order for all the configurations to train properly, which may have caused some negative performance impact. The changes were:
+* We had to lower the learning rate in order for the configurations with the most parameters to converge.
+* We had to manipulate the `pool_every` parameter in order for the L4 network to be valid.
+* We lowered the batch size to train faster.
+
+As we can see in the graph, most of the configurations achieved approximately the same accuracy on the test set, but in a similar way to the previous experiment, when we increased L it took more epochs for the configuration to reach early stopping. Also, the larger the L, the lower the gap between training accuracy and test accuracy, which implies that the deeper models are less prone to overfitting.
 """
 
 part5_q4 = r"""
-**Your answer:**
-Write your answer using **markdown** and $\LaTeX$:
-```python
-# A code block
-a = 2
-```
-An equation: $e^{i\pi} -1 = 0$
+We can clearly see that with the current configuration of ResNet and the training parameters we used, we got worse accuracies than most of the previous experiments. Like in experiment 1.3, a low value of `pool_every` caused the deeper networks to be invalid, and so this value was raised for the deeper models. 
+
+It can clearly be seen from the graphs that all of the ResNet configurations in this experiment are prone to overfitting, since the gap between the test accuracy is very high, and can even reach almost to 50% in some of the cases.  
+
+We can dee that the deeper the model, 
 """
 
 part5_q5 = r"""

@@ -380,6 +380,7 @@ class ResNet(CNN):
                 in_channels = channel
                 block_channels =[] # empty it cuz we used it in block
                 # add a pooling layer (after the conv act * P)
+                # print(self.pooling_params.keys())
                 layers += [pool(**self.pooling_params)]
 
 
@@ -481,7 +482,7 @@ class MyInceptionBlock(InceptionBlock):
 
 
 
-class YourCNN(CNN):
+class YourCNN2(CNN):
     def __init__(
         self,
         in_size,
@@ -570,25 +571,7 @@ class YourCNN(CNN):
         return seq
 
 
-
-
-# class YourCNN(CNN):
-#     def __init__(self, *args, **kwargs):
-#         """
-#         See CNN.__init__
-#         """
-#         super().__init__(*args, **kwargs)
-#
-#         # TODO: Add any additional initialization as needed.
-#         # ====== YOUR CODE: ======
-#         raise NotImplementedError()
-#         # ========================
-#
-#     # TODO: Change whatever you want about the CNN to try to
-#     #  improve it's results on CIFAR-10.
-#     #  For example, add batchnorm, dropout, skip connections, change conv
-#     #  filter sizes etc.
-#     # ====== YOUR CODE: ======
-#     raise NotImplementedError()
-#
-#     # ========================
+class YourCNN(ResNet):
+    def __init__(self, in_size, out_classes, channels, pool_every, hidden_dims, **kwargs):
+        super().__init__(in_size, out_classes, channels, pool_every, hidden_dims, True, 0, True,
+                         pooling_params=dict(kernel_size=2), **kwargs)
